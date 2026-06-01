@@ -112,6 +112,9 @@ const LEAD_COLORS = [
   {name:'Vermelho', color:'#d71920'},
   {name:'Laranja', color:'#ff7a00'}
 ];
+const LEAD_COLOR_OVERRIDES = [
+  {terms:['golfe'], colors:[{name:'Branca', color:'#ffffff'}]}
+];
 const LEAD_MOUNT_OPTIONS = ['Olhal','Haste com Destorcedor'];
 const MOUNT_OPTION_OVERRIDES = [
   {terms:['furada'], options:[]},
@@ -139,6 +142,11 @@ const MOUNT_OPTION_OVERRIDES = [
 
 function esc(s){return String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function normalizeText(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
+function getLeadColors(p){
+  const hay = normalizeText([p.title,p.handle,p.tags].join(' '));
+  const override = LEAD_COLOR_OVERRIDES.find(rule=>rule.terms.some(term=>hay.includes(term)));
+  return override ? [...LEAD_COLORS,...override.colors] : LEAD_COLORS;
+}
 function getMountOptions(p){
   const hay = normalizeText([p.title,p.handle,p.tags].join(' '));
   const override = MOUNT_OPTION_OVERRIDES.find(rule=>rule.terms.some(term=>hay.includes(term)));
@@ -200,7 +208,7 @@ function card(p){
   const mountOptions = getMountOptions(p);
   const optionRow = mountOptions.length ? `<div class="availabilityRow"><b>Opções</b><div class="optionPills">${mountOptions.map(o=>`<span>${esc(o)}</span>`).join('')}</div></div>` : '';
   const availability = p.category==='Chumbadas' ? `<div class="availability">
-    <div class="availabilityRow"><b>Cores</b><div class="swatches">${LEAD_COLORS.map(c=>`<span class="swatch" style="--swatch:${c.color}">${esc(c.name)}</span>`).join('')}</div></div>
+    <div class="availabilityRow"><b>Cores</b><div class="swatches">${getLeadColors(p).map(c=>`<span class="swatch" style="--swatch:${c.color}">${esc(c.name)}</span>`).join('')}</div></div>
     ${optionRow}
   </div>` : '';
   return `<article class="card"${id}>
@@ -219,7 +227,7 @@ function render(){
   const term = normalizeText(q.value.trim());
   const filtered = PRODUCTS.filter(p=>{
     const byCat = activeFilter==='Todos' || p.category===activeFilter;
-    const leadTerms = p.category==='Chumbadas' ? [...LEAD_COLORS.map(c=>c.name),...getMountOptions(p)] : [];
+    const leadTerms = p.category==='Chumbadas' ? [...getLeadColors(p).map(c=>c.name),...getMountOptions(p)] : [];
     const hay = normalizeText([p.title,p.handle,p.category,p.description,p.tags,...(p.weights||[]),...(p.hooks||[]),...leadTerms,...p.variants.flatMap(v=>v.opts.map(o=>`${o.name} ${o.value}`))].join(' '));
     return byCat && (!term || hay.includes(term));
   });
