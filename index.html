@@ -59,6 +59,7 @@ h3 a:hover{color:var(--orange)}
 .detailLink:hover{text-decoration:underline}
 details{margin-top:4px;border-top:1px solid var(--line);padding-top:12px}summary{cursor:pointer;font-weight:1000;color:#111;list-style:none;display:flex;justify-content:space-between;align-items:center}summary::-webkit-details-marker{display:none}summary:after{content:"+";background:#111;color:#fff;border-radius:999px;width:24px;height:24px;display:grid;place-items:center}details[open] summary:after{content:"−"}
 .tableWrap{margin-top:12px;max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:16px}table{border-collapse:collapse;width:100%;font-size:13px;background:#fff}th,td{padding:10px;border-bottom:1px solid #edf1f3;text-align:left;vertical-align:top}th{position:sticky;top:0;background:#f8fafb;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#62707c}td{color:#27323b}.empty{display:none;text-align:center;padding:50px;background:#fff;border:1px dashed var(--line);border-radius:28px;color:#65727d}
+.selecao-row-add{padding:5px 10px;font-size:11px;font-weight:700;color:#fff;background:var(--orange);border:0;border-radius:6px;cursor:pointer;white-space:nowrap}
 .footer{background:#101418;color:#d7e0e7;padding:34px 22px;text-align:center}.footer b{color:#fff}
 @media(max-width:920px){.grid{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(2,1fr)}.tools{grid-template-columns:1fr}}
 @media(max-width:620px){.grid{grid-template-columns:1fr}.hero{padding-top:34px}.thumb{height:210px}.stats{grid-template-columns:1fr 1fr}.stat b{font-size:24px}}
@@ -78,6 +79,11 @@ details{margin-top:4px;border-top:1px solid var(--line);padding-top:12px}summary
 .backBtn{margin-top:34px}
 @media(max-width:860px){.productGrid{grid-template-columns:1fr}.productImage{position:static;min-height:280px}}
 </style>
+<script>
+  window.MINHA_SELECAO_MODE = 'pdf';
+  window.MINHA_SELECAO_HUB_HOSTNAME = 'catalogos.chumbada.com.br';
+</script>
+<script src="https://selecao.chumbada.com.br/client.js" defer></script>
 </head>
 <body>
 <header class="hero" id="hero">
@@ -206,20 +212,22 @@ function tableRows(p){
     }
     const cols = Array.from(new Set(rows.flatMap(v=>v.opts.map(o=>o.name))));
     if(cols.length){
-      const head = cols.map(c=>`<th>${esc(c)}</th>`).join('');
+      const head = cols.map(c=>`<th>${esc(c)}</th>`).join('') + '<th>SKU</th><th></th>';
       const body = rows.map(v=>{
         const map = Object.fromEntries(v.opts.map(o=>[o.name,o.value]));
-        return `<tr>${cols.map(c=>`<td>${esc(map[c]||'-')}</td>`).join('')}</tr>`;
+        const label = v.opts.map(o=>o.value).join(', ');
+        return `<tr>${cols.map(c=>`<td>${esc(map[c]||'-')}</td>`).join('')}<td>${esc(v.sku||'-')}</td><td>${v.sku?`<button type="button" class="selecao-row-add" data-sku="${esc(v.sku)}" data-label="${esc(label)}">Adicionar</button>`:''}</td></tr>`;
       }).join('');
       return `<div class="tableWrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
     }
     return `<div class="tableWrap"><table><thead><tr><th>Conteúdo do kit</th></tr></thead><tbody><tr><td>${esc(p.description||'Kit de chumbadas')}</td></tr></tbody></table></div>`;
   }
   const cols = Array.from(new Set(rows.flatMap(v=>v.opts.map(o=>o.name))));
-  const head = cols.map(c=>`<th>${esc(c)}</th>`).join('') + '<th>SKU</th>';
+  const head = cols.map(c=>`<th>${esc(c)}</th>`).join('') + '<th>SKU</th><th></th>';
   const body = rows.map(v=>{
     const map = Object.fromEntries(v.opts.map(o=>[o.name,o.value]));
-    return `<tr>${cols.map(c=>`<td>${esc(map[c]||'-')}</td>`).join('')}<td>${esc(v.sku||'-')}</td></tr>`;
+    const label = v.opts.map(o=>o.value).join(', ');
+    return `<tr>${cols.map(c=>`<td>${esc(map[c]||'-')}</td>`).join('')}<td>${esc(v.sku||'-')}</td><td>${v.sku?`<button type="button" class="selecao-row-add" data-sku="${esc(v.sku)}" data-label="${esc(label)}">Adicionar</button>`:''}</td></tr>`;
   }).join('');
   return `<div class="tableWrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
@@ -295,9 +303,25 @@ function showCatalog(){
   render();
 }
 
+let currentProduct = null;
+
+productPageEl.addEventListener('click', function (e) {
+  const btn = e.target.closest('.selecao-row-add');
+  if (!btn || !window.MinhaSelecao || !currentProduct) return;
+  window.MinhaSelecao.addItem({
+    catalog: 'chumbadas',
+    productId: currentProduct.handle,
+    name: currentProduct.title,
+    sku: btn.dataset.sku || null,
+    variant: btn.dataset.label || '',
+    qty: 1,
+  });
+});
+
 function showProduct(handle){
   const p = PRODUCTS.find(x=>x.handle===handle);
   if(!p){ location.hash=''; return; }
+  currentProduct = p;
   heroEl.style.display = 'none';
   toolbarEl.style.display = 'none';
   catalogoEl.style.display = 'none';
