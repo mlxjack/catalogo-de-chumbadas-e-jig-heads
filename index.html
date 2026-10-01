@@ -207,6 +207,44 @@ td{color:var(--ink2)}
 }
 @media(max-width:340px){.grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+
+/* ---------- Seletor de variações ---------- */
+.cfg{display:flex;flex-direction:column;gap:18px;margin:0 0 26px}
+.cfgLabel{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:8px;display:flex;align-items:baseline;gap:10px}
+.cfgLabel b{color:var(--ink);font-size:13.5px;letter-spacing:0;text-transform:none;font-weight:700}
+.cfgOpts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:9px 14px;background:#fff;border:1.5px solid var(--line);border-radius:11px;font:600 14px var(--font);color:var(--ink2);cursor:pointer;transition:border-color .12s,background .12s,box-shadow .12s}
+.opt:hover{border-color:#c7ccd2}
+.opt i{width:18px;height:18px;border-radius:50%;background:var(--swatch);border:1px solid rgba(0,0,0,.25);box-shadow:inset 0 -2px 3px rgba(0,0,0,.12);flex:none}
+.opt.active{border-color:var(--orange);background:var(--soft);color:var(--ink);box-shadow:0 0 0 3px rgba(255,106,0,.14)}
+.cfgOpts.weights{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr))}
+.wopt{flex-direction:column;justify-content:center;align-items:center;gap:1px;padding:8px 6px}
+.wopt span{font-weight:700;font-size:14.5px}
+.wopt small{font-size:12px;color:var(--muted);font-weight:700}
+.wopt.active small{color:var(--orangeD)}
+.buyBar{display:flex;flex-direction:column;gap:12px;background:var(--dark);color:#fff;border-radius:16px;padding:16px 18px;margin-top:2px}
+.buyInfo{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 14px}
+.buyLabel{flex:1 1 100%;font-weight:600;font-size:13.5px;color:#cdd6de}
+.buyPrice{font-size:26px;font-weight:800;letter-spacing:-.02em}
+.buySku{font-size:11px;color:#8d9aa7;font-family:ui-monospace,Consolas,monospace}
+.buyAct{display:flex;gap:10px}
+.buyAct #selecaoPickerAdd{flex:1;padding:13px 16px;font-size:14px}
+#selecaoPickerAdd.done{background:#22a35a;color:#fff}
+.aboutBox{margin:0 0 22px}
+.aboutBox .variationsTitle{margin-top:6px}
+.aboutBox .desc{margin:0}
+.kitList{margin:8px 0 0;padding-left:20px;color:#48525c;font-size:14.5px;line-height:1.7}
+@media(max-width:860px){
+  .productPage{padding-bottom:190px}
+  .productImage{min-height:0;padding:50px 12px 8px}
+  .productImage img{max-height:170px}
+  .productImage3d{min-height:0;height:300px}
+  .productInfo h1{font-size:34px}
+  .buyBar{position:fixed;left:0;right:0;bottom:0;z-index:20;border-radius:18px 18px 0 0;padding:12px 90px calc(12px + env(safe-area-inset-bottom)) 16px;gap:8px;box-shadow:0 -10px 30px rgba(15,20,25,.25)}
+  .buyLabel{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .buyPrice{font-size:22px}
+  .buySku{margin-left:auto}
+}
 </style>
 <script>
   window.MINHA_SELECAO_MODE = 'pdf';
@@ -366,46 +404,110 @@ function kitContentItems(p){
   if(downShot) return [`Chumbadas de ${downShot[1].trim()} gramas, ${downShot[2].trim()}.`];
   return [];
 }
-function tableRows(p){
-  const rows = p.variants.map(v=>({
-    ...v,
-    opts:(v.opts||[]).filter(o=>!(normalizeText(o.name)==='title' && normalizeText(o.value)==='default title'))
-  }));
-  if(p.category==='Kits'){
-    const items = kitContentItems(p);
-    if(items.length){
-      const body = items.map(item=>`<tr><td>${esc(item)}</td></tr>`).join('');
-      return `<div class="tableWrap"><table><thead><tr><th>Conteúdo do kit</th></tr></thead><tbody>${body}</tbody></table></div>`;
-    }
-    const cols = Array.from(new Set(rows.flatMap(v=>v.opts.map(o=>o.name))));
-    if(cols.length){
-      const head = cols.map(c=>`<th>${esc(c)}</th>`).join('') + '<th>SKU</th><th></th>';
-      const body = rows.map(v=>{
-        const map = Object.fromEntries(v.opts.map(o=>[o.name,o.value]));
-        const label = v.opts.map(o=>o.value).join(', ');
-        return `<tr>${cols.map((c,i)=>`<td>${i === 0 && v.image ? `<img src="${esc(v.image)}" alt="${esc(p.title + ' — ' + label)}" width="72" height="72" style="object-fit:contain;vertical-align:middle;margin-right:8px" loading="lazy">` : ''}${esc(map[c]||'-')}</td>`).join('')}<td>${esc(v.sku||'-')}</td><td>${v.sku?`<button type="button" class="selecao-row-add" data-sku="${esc(v.sku)}" data-label="${esc(label)}">Adicionar</button>`:''}</td></tr>`;
-      }).join('');
-      return `<div class="tableWrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
-    }
-    return `<div class="tableWrap"><table><thead><tr><th>Conteúdo do kit</th></tr></thead><tbody><tr><td>${esc(p.description||'Kit de chumbadas')}</td></tr></tbody></table></div>`;
+const SHOW_PRICE = false;
+const COLOR_HEX = {'Natural':'#b8b0a6','Amarelo':'#ffd429','Preto':'#111111','Vermelho':'#d71920','Laranja':'#ff7a00','Branca':'#ffffff','Branco':'#ffffff','Azul':'#1f6fe5','Verde':'#1f9d55','Rosa':'#f48fb1','Luminoso':'#adff2f'};
+let cfg = null;
+function cfgIsWeight(n){ return /^peso/.test(normalizeText(n)); }
+function cfgDimLabel(n){
+  const k = normalizeText(n);
+  if(k==='cor') return 'Cor';
+  if(/^varia/.test(k)) return 'Opção';
+  return n;
+}
+function cfgNum(val){
+  if(typeof val==='number') return val;
+  const n = parseFloat(String(val||'').replace('R$','').replace(/\s+/g,'').replace(/\./g,'').replace(',','.'));
+  return isNaN(n) ? 0 : n;
+}
+function fmtBRL(n){ return 'R$ ' + n.toFixed(2).replace('.',','); }
+function weightNum(w){ return parseFloat(String(w).replace(',','.').replace(/[^\d.]/g,'')) || 0; }
+function buildConfig(p){
+  const rows = p.variants.map(v=>{
+    const dims = {}; let w = '';
+    (v.opts||[]).forEach(o=>{
+      if(normalizeText(o.name)==='title' && normalizeText(o.value)==='default title') return;
+      if(cfgIsWeight(o.name)) w = o.value; else dims[o.name] = o.value;
+    });
+    return {v, dims, w, price: cfgNum(v.price)};
+  });
+  const names = [];
+  rows.forEach(r=>Object.keys(r.dims).forEach(n=>{ if(!names.includes(n)) names.push(n); }));
+  names.sort((a,b)=>(normalizeText(a)==='cor'?0:1)-(normalizeText(b)==='cor'?0:1));
+  const dimList = names.concat(rows.some(r=>r.w) ? ['__w'] : []);
+  const get = (r,d)=> d==='__w' ? r.w : (r.dims[d]||'');
+  const values = {};
+  dimList.forEach(d=>{
+    const u = [];
+    rows.forEach(r=>{ const x = get(r,d); if(x && !u.includes(x)) u.push(x); });
+    if(d==='__w') u.sort((a,b)=>weightNum(a)-weightNum(b));
+    values[d] = u;
+  });
+  const c = {p, rows, dimList, values, get, chosen:{}, variant:null, qty:1};
+  pick(c, null, null);
+  return c;
+}
+function pick(c, dim, val){
+  let cand = c.rows;
+  const chosen = {};
+  const order = dim ? [dim, ...c.dimList.filter(d=>d!==dim)] : c.dimList;
+  order.forEach(d=>{
+    const want = d===dim ? val : c.chosen[d];
+    let f = want ? cand.filter(r=>c.get(r,d)===want) : [];
+    if(!f.length) f = cand;
+    chosen[d] = c.get(f[0], d);
+    cand = f.filter(r=>c.get(r,d)===chosen[d]);
+  });
+  c.chosen = chosen;
+  c.variant = cand[0];
+}
+function cfgLabel(c){ return c.dimList.map(d=>c.chosen[d]).filter(Boolean).join(' · '); }
+function renderCfg(){
+  const c = cfg, host = document.getElementById('cfg');
+  if(!c || !host) return;
+  let html = '';
+  c.dimList.filter(d=>d!=='__w' && c.values[d].length>1).forEach(d=>{
+    const isColor = normalizeText(d)==='cor';
+    html += `<div class="cfgRow"><div class="cfgLabel">${esc(cfgDimLabel(d))}<b>${esc(c.chosen[d])}</b></div><div class="cfgOpts">`
+      + c.values[d].map(v=>`<button type="button" class="opt${v===c.chosen[d]?' active':''}" data-dim="${esc(d)}" data-val="${esc(v)}">${isColor?`<i style="--swatch:${COLOR_HEX[v]||'#b8b0a6'}"></i>`:''}${esc(v)}</button>`).join('')
+      + `</div></div>`;
+  });
+  if(c.dimList.includes('__w') && c.values.__w.length>1){
+    const seen = new Set();
+    const avail = c.rows
+      .filter(r=>c.dimList.every(d=>d==='__w' || c.get(r,d)===c.chosen[d]))
+      .filter(r=>!seen.has(r.w) && seen.add(r.w))
+      .sort((a,b)=>weightNum(a.w)-weightNum(b.w));
+    html += `<div class="cfgRow"><div class="cfgLabel">Peso<b>${esc(c.chosen.__w)}</b></div><div class="cfgOpts weights">`
+      + avail.map(r=>`<button type="button" class="opt wopt${r.w===c.chosen.__w?' active':''}" data-dim="__w" data-val="${esc(r.w)}"><span>${esc(r.w)}</span>${SHOW_PRICE&&r.price?`<small>${fmtBRL(r.price)}</small>`:''}</button>`).join('')
+      + `</div></div>`;
   }
-  const cols = Array.from(new Set(rows.flatMap(v=>v.opts.map(o=>o.name))));
-  const head = cols.map(c=>`<th>${esc(c)}</th>`).join('') + '<th>SKU</th><th></th>';
-  const body = rows.map(v=>{
-    const map = Object.fromEntries(v.opts.map(o=>[o.name,o.value]));
-    const label = v.opts.map(o=>o.value).join(', ');
-    return `<tr>${cols.map(c=>`<td>${esc(map[c]||'-')}</td>`).join('')}<td>${esc(v.sku||'-')}</td><td>${v.sku?`<button type="button" class="selecao-row-add" data-sku="${esc(v.sku)}" data-label="${esc(label)}">Adicionar</button>`:''}</td></tr>`;
-  }).join('');
-  return `<div class="tableWrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  const r = c.variant;
+  const label = cfgLabel(c) || c.p.title;
+  html += `<div class="buyBar">
+    <div class="buyInfo"><span class="buyLabel">${esc(label)}</span>${SHOW_PRICE?`<b class="buyPrice">${r.price?fmtBRL(r.price):'Consulte'}</b>`:''}<span class="buySku">SKU ${esc(r.v.sku||'-')}</span></div>
+    <div class="buyAct">
+      <div class="selecao-qty-stepper">
+        <button type="button" data-qty-action="dec" aria-label="Diminuir quantidade">−</button>
+        <span class="selecao-qty-value">${c.qty}</span>
+        <button type="button" data-qty-action="inc" aria-label="Aumentar quantidade">+</button>
+      </div>
+      <button type="button" id="selecaoPickerAdd">Adicionar à Minha Seleção</button>
+    </div>
+  </div>`;
+  host.innerHTML = html;
+  const pn = document.getElementById('priceNow');
+  if(pn) pn.textContent = r.price ? fmtBRL(r.price) : 'Consulte';
+  const img = productPageEl.querySelector('.viewFoto');
+  const src = r.v.image || c.p.image;
+  if(img && src && img.getAttribute('src')!==src) img.setAttribute('src', src);
 }
-function availabilityBlock(p){
-  const mountOptions = getMountOptions(p);
-  const optionRow = mountOptions.length ? `<div class="availabilityRow"><b>Opções</b><div class="optionPills">${mountOptions.map(o=>`<span>${esc(o)}</span>`).join('')}</div></div>` : '';
-  return p.category==='Chumbadas' ? `<div class="availability">
-    <div class="availabilityRow"><b>Cores</b><div class="swatches">${getLeadColors(p).map(c=>`<span class="swatch" style="--swatch:${c.color}">${esc(c.name)}</span>`).join('')}</div></div>
-    ${optionRow}
-  </div>` : '';
+function kitContentBlock(p){
+  if(p.category!=='Kits') return '';
+  const items = kitContentItems(p);
+  if(!items.length) return '';
+  return `<div class="aboutBox"><h2 class="variationsTitle">Conteúdo do kit</h2><ul class="kitList">${items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`;
 }
+
 function swatchDots(p){
   const hasColors = p.category==='Chumbadas';
   if(!hasColors) return '';
@@ -453,11 +555,10 @@ function productPageHTML(p){
       <div class="productInfo">
         <span class="badge">${esc(p.category)}</span>
         <h1>${esc(p.title)}</h1>
-        <div class="varcount">${p.variantCount} variaç${p.variantCount===1?'ão':'ões'} disponíve${p.variantCount===1?'l':'is'}</div>
-        ${descText(p)?`<p class="desc">${esc(descText(p))}</p>`:''}
-        ${availabilityBlock(p)}
-        <h2 class="variationsTitle">Todas as variações</h2>
-        ${tableRows(p)}
+        ${SHOW_PRICE?`<div class="price-row"><span class="price-tag" id="priceNow"></span></div>`:''}
+        <div id="cfg" class="cfg"></div>
+        ${kitContentBlock(p)}
+        ${descText(p)?`<div class="aboutBox"><h2 class="variationsTitle">Sobre o produto</h2><p class="desc">${esc(descText(p))}</p></div>`:''}
       </div>
     </div>
     <a class="btn backBtn" href="#">← Voltar ao catálogo</a>
@@ -519,16 +620,31 @@ productPageEl.addEventListener('click', function (e) {
     }
     return;
   }
-  const btn = e.target.closest('.selecao-row-add');
-  if (!btn || !window.MinhaSelecao || !currentProduct) return;
-  window.MinhaSelecao.addItem({
-    catalog: 'chumbadas',
-    productId: currentProduct.handle,
-    name: currentProduct.title,
-    sku: btn.dataset.sku || null,
-    variant: btn.dataset.label || '',
-    qty: 1,
-  });
+  const optBtn = e.target.closest('.opt');
+  if (optBtn && cfg) { pick(cfg, optBtn.dataset.dim, optBtn.dataset.val); renderCfg(); return; }
+  const qtyBtn = e.target.closest('[data-qty-action]');
+  if (qtyBtn && cfg) {
+    cfg.qty = qtyBtn.dataset.qtyAction === 'inc' ? cfg.qty + 1 : Math.max(1, cfg.qty - 1);
+    const el = productPageEl.querySelector('.selecao-qty-value'); if (el) el.textContent = cfg.qty;
+    return;
+  }
+  const addBtn = e.target.closest('#selecaoPickerAdd');
+  if (addBtn && cfg && window.MinhaSelecao && currentProduct) {
+    const r = cfg.variant;
+    if (SHOW_PRICE && !r.price) return;
+    const item = {
+      catalog: 'chumbadas',
+      productId: currentProduct.handle,
+      name: currentProduct.title,
+      sku: r.v.sku || null,
+      variant: cfgLabel(cfg),
+      qty: cfg.qty,
+    };
+    if (SHOW_PRICE) item.unitPrice = r.price;
+    window.MinhaSelecao.addItem(item);
+    addBtn.classList.add('done'); addBtn.textContent = 'Adicionado ✓';
+    setTimeout(() => { addBtn.classList.remove('done'); addBtn.textContent = 'Adicionar à Minha Seleção'; }, 1400);
+  }
 });
 
 function showProduct(handle){
@@ -539,6 +655,7 @@ function showProduct(handle){
   toolbarEl.style.display = 'none';
   catalogoEl.style.display = 'none';
   productPageEl.innerHTML = productPageHTML(p);
+  cfg = buildConfig(p); renderCfg();
   productPageEl.style.display = '';
   document.title = p.title + ' | Chumbada Oficial';
   window.scrollTo(0, 0);
