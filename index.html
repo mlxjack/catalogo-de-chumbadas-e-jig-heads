@@ -77,12 +77,14 @@ details{margin-top:4px;border-top:1px solid var(--line);padding-top:12px}summary
 .variationsTitle{font-size:18px;margin:26px 0 12px;letter-spacing:-.02em}
 .productPage .tableWrap{max-height:none}
 .backBtn{margin-top:34px}
-@media(max-width:860px){.productGrid{grid-template-columns:1fr}.productImage{position:static;min-height:280px}}
+@media(max-width:860px){.productGrid{grid-template-columns:1fr}.productImage{position:relative;top:0;min-height:280px}}
 .badge3d{position:absolute;top:12px;left:12px;background:var(--dark);color:#fff;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:1000;letter-spacing:.06em;z-index:1;display:flex;align-items:center;gap:4px}
 .badge3d:before{content:"◆";color:var(--orange)}
 .viewToggle{display:flex;gap:8px;position:absolute;top:16px;left:16px;z-index:2}
 .viewToggle button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-weight:900;font-size:12px;cursor:pointer;color:#24303a}
 .viewToggle button.active{background:var(--dark);border-color:var(--dark);color:#fff}
+.viewToggle .btn3d{background:var(--orange);border-color:var(--orange);color:#111}
+.viewToggle .btn3d.active{background:var(--dark);border-color:var(--dark);color:#fff}
 .productImage3d{display:none;width:100%;min-height:390px;height:420px;border-radius:20px;overflow:hidden;background:#1c232c;position:relative}
 .productImage3d model-viewer{width:100%;height:100%;--poster-color:transparent}
 .productImage3d .arBtn{position:absolute;bottom:14px;right:14px;background:var(--orange);color:#111;border:none;border-radius:999px;padding:10px 16px;font-weight:1000;font-size:13px;cursor:pointer;z-index:2}
@@ -303,7 +305,7 @@ function productPageHTML(p){
     <nav class="breadcrumb"><a href="#">Início</a><span>/</span><span>${esc(p.category)}</span><span>/</span><span class="current">${esc(p.title)}</span></nav>
     <div class="productGrid">
       <div class="productImage">
-        ${has3d?`<div class="viewToggle"><button type="button" class="viewBtn active" data-view="foto">Foto</button><button type="button" class="viewBtn" data-view="3d">Ver em 3D</button></div>`:''}
+        ${has3d?`<div class="viewToggle"><button type="button" class="viewBtn active" data-view="foto">Foto</button><button type="button" class="viewBtn btn3d" data-view="3d">Ver em 3D</button></div>`:''}
         ${p.image?`<img class="viewFoto" src="${esc(p.image)}" alt="${esc(p.title)}">`:`<div class="noimg">Sem imagem</div>`}
         ${has3d?`<div class="productImage3d" id="view3dHost"></div>`:''}
       </div>
